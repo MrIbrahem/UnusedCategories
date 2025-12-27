@@ -66,19 +66,22 @@ def get_unused_categories(site, limit=10):
         limit: Maximum number of categories to fetch
     
     Returns:
-        list: List of unused category page objects (dicts with 'title' key)
+        list: List of unused category dicts with keys: title (str), ns (int)
     """
     print(f"Fetching up to {limit} unused categories...")
     
-    # Use the MediaWiki API's querypage list to get unused categories
-    # API: action=query&list=querypage&qppage=Unusedcategories&qplimit=N
-    result = site.get('query', list='querypage', qppage='Unusedcategories', qplimit=limit)
-    
     categories = []
-    if 'query' in result and 'querypage' in result['query']:
-        querypage_data = result['query']['querypage']
-        if 'results' in querypage_data:
-            categories = querypage_data['results']
+    try:
+        # Use the MediaWiki API's querypage list to get unused categories
+        # API: action=query&list=querypage&qppage=Unusedcategories&qplimit=N
+        result = site.get('query', list='querypage', qppage='Unusedcategories', qplimit=limit)
+        
+        if 'query' in result and 'querypage' in result['query']:
+            querypage_data = result['query']['querypage']
+            if 'results' in querypage_data:
+                categories = querypage_data['results']
+    except mwclient.errors.APIError as e:
+        print(f"API error fetching unused categories: {e}")
     
     print(f"Found {len(categories)} unused categories")
     return categories
