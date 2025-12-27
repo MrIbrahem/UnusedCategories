@@ -161,10 +161,9 @@ def is_ar_stub_or_maintenance_category(category_name):
         return True
     
     # Check for stub-related terms (بذور = stubs)
-    stub_terms = ['بذور', 'بذرة']
-    for term in stub_terms:
-        if term in category_name:
-            return True
+    # Note: بذرة is already checked with startswith above, so only check بذور here
+    if 'بذور' in category_name:
+        return True
     
     # Check for maintenance-related terms (صيانة = maintenance)
     if 'صيانة' in category_name:
@@ -321,7 +320,7 @@ def load_credentials():
     
     if not username or not password:
         raise ValueError(
-            "Credentials not found. Please set WIKI_USERNAME and WIKI_PASSWORD environment variables."
+            "Credentials not found. Please set WM_USERNAME and PASSWORD environment variables."
         )
     
     return username, password
