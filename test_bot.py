@@ -202,5 +202,171 @@ class TestCredentialLoading(unittest.TestCase):
                     del os.environ['WIKI_PASSWORD']
 
 
+class TestCategoryFiltering(unittest.TestCase):
+    """Test the category filtering functionality."""
+    
+    def test_ar_stub_category_starts_with_budhra(self):
+        """Test that Arabic category starting with بذرة is detected as stub."""
+        from unused_categories_bot import is_ar_stub_or_maintenance_category
+        
+        self.assertTrue(is_ar_stub_or_maintenance_category("بذرة علم"))
+        self.assertTrue(is_ar_stub_or_maintenance_category("تصنيف:بذرة علم"))
+    
+    def test_ar_stub_category_contains_budhur(self):
+        """Test that Arabic category containing بذور is detected as stub."""
+        from unused_categories_bot import is_ar_stub_or_maintenance_category
+        
+        self.assertTrue(is_ar_stub_or_maintenance_category("مقالات بذور"))
+        self.assertTrue(is_ar_stub_or_maintenance_category("تصنيف:بذور علم"))
+    
+    def test_ar_maintenance_category(self):
+        """Test that Arabic maintenance category is detected."""
+        from unused_categories_bot import is_ar_stub_or_maintenance_category
+        
+        self.assertTrue(is_ar_stub_or_maintenance_category("صيانة ويكيبيديا"))
+        self.assertTrue(is_ar_stub_or_maintenance_category("تصنيف:صيانة"))
+    
+    def test_ar_normal_category(self):
+        """Test that normal Arabic category is not flagged."""
+        from unused_categories_bot import is_ar_stub_or_maintenance_category
+        
+        self.assertFalse(is_ar_stub_or_maintenance_category("تاريخ"))
+        self.assertFalse(is_ar_stub_or_maintenance_category("تصنيف:علوم"))
+    
+    def test_en_stub_category(self):
+        """Test that English stub category is detected."""
+        from unused_categories_bot import is_en_stub_or_maintenance_category
+        
+        self.assertTrue(is_en_stub_or_maintenance_category("Science stubs"))
+        self.assertTrue(is_en_stub_or_maintenance_category("Category:Stub articles"))
+    
+    def test_en_maintenance_category(self):
+        """Test that English maintenance category is detected."""
+        from unused_categories_bot import is_en_stub_or_maintenance_category
+        
+        self.assertTrue(is_en_stub_or_maintenance_category("Wikipedia maintenance"))
+        self.assertTrue(is_en_stub_or_maintenance_category("Category:Maintenance templates"))
+    
+    def test_en_normal_category(self):
+        """Test that normal English category is not flagged."""
+        from unused_categories_bot import is_en_stub_or_maintenance_category
+        
+        self.assertFalse(is_en_stub_or_maintenance_category("History"))
+        self.assertFalse(is_en_stub_or_maintenance_category("Category:Science"))
+    
+    def test_en_page_has_category_in_text_found(self):
+        """Test that category in page text is detected."""
+        from unused_categories_bot import en_page_has_category_in_text
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_page.text.return_value = "Article text\n[[Category:History]]\nMore text"
+        
+        self.assertTrue(en_page_has_category_in_text(mock_page, "History"))
+        self.assertTrue(en_page_has_category_in_text(mock_page, "Category:History"))
+    
+    def test_en_page_has_category_in_text_not_found(self):
+        """Test that missing category is not detected."""
+        from unused_categories_bot import en_page_has_category_in_text
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_page.text.return_value = "Article text\n[[Category:Science]]\nMore text"
+        
+        self.assertFalse(en_page_has_category_in_text(mock_page, "History"))
+    
+    def test_en_page_has_category_with_sort_key(self):
+        """Test that category with sort key is detected."""
+        from unused_categories_bot import en_page_has_category_in_text
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_page.text.return_value = "Article text\n[[Category:History|Key]]\nMore text"
+        
+        self.assertTrue(en_page_has_category_in_text(mock_page, "History"))
+    
+    def test_en_page_has_category_case_insensitive(self):
+        """Test that category detection is case insensitive."""
+        from unused_categories_bot import en_page_has_category_in_text
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_page.text.return_value = "Article text\n[[category:history]]\nMore text"
+        
+        self.assertTrue(en_page_has_category_in_text(mock_page, "History"))
+
+
+class TestHiddenCategoryCheck(unittest.TestCase):
+    """Test the hidden category check functionality."""
+    
+    def test_hidden_category_detected(self):
+        """Test that hidden category is detected."""
+        from unused_categories_bot import is_hidden_category
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_site = Mock()
+        mock_page.site = mock_site
+        mock_page.name = "Category:Hidden test"
+        
+        mock_site.get.return_value = {
+            'query': {
+                'pages': {
+                    '123': {
+                        'categoryinfo': {
+                            'hidden': True
+                        }
+                    }
+                }
+            }
+        }
+        
+        self.assertTrue(is_hidden_category(mock_page))
+    
+    def test_visible_category_not_flagged(self):
+        """Test that visible category is not flagged as hidden."""
+        from unused_categories_bot import is_hidden_category
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_site = Mock()
+        mock_page.site = mock_site
+        mock_page.name = "Category:Visible test"
+        
+        mock_site.get.return_value = {
+            'query': {
+                'pages': {
+                    '123': {
+                        'categoryinfo': {
+                            'hidden': False
+                        }
+                    }
+                }
+            }
+        }
+        
+        self.assertFalse(is_hidden_category(mock_page))
+    
+    def test_category_without_categoryinfo(self):
+        """Test that category without categoryinfo is not flagged."""
+        from unused_categories_bot import is_hidden_category
+        from unittest.mock import Mock
+        
+        mock_page = Mock()
+        mock_site = Mock()
+        mock_page.site = mock_site
+        mock_page.name = "Category:Test"
+        
+        mock_site.get.return_value = {
+            'query': {
+                'pages': {
+                    '123': {}
+                }
+            }
+        }
+        
+        self.assertFalse(is_hidden_category(mock_page))
+
+
 if __name__ == '__main__':
     unittest.main()

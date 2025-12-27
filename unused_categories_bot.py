@@ -18,6 +18,192 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def is_hidden_category(category_page):
+    """
+    Check if a category is a hidden category.
+    
+    Hidden categories are categories that have the __HIDDENCAT__ magic word
+    or are in a hidden category parent.
+    
+    Args:
+        category_page: mwclient.Page object of the category
+    
+    Returns:
+        bool: True if category is hidden, False otherwise
+    """
+    try:
+        # Get category info including hidden property
+        result = category_page.site.get(
+            'query',
+            prop='categoryinfo',
+            titles=category_page.name
+        )
+        
+        if 'query' in result and 'pages' in result['query']:
+            pages = result['query']['pages']
+            for page_id, page_data in pages.items():
+                if 'categoryinfo' in page_data:
+                    return page_data['categoryinfo'].get('hidden', False)
+    except (mwclient.errors.APIError, KeyError) as e:
+        print(f"Error checking hidden category for {category_page.name}: {e}")
+    
+    return False
+
+
+def is_ar_stub_or_maintenance_category(category_name):
+    """
+    Check if an Arabic category is a stub or maintenance category.
+    
+    Stub categories start with "بذرة" or contain stub-related terms.
+    Maintenance categories contain "صيانة" in the name.
+    
+    Args:
+        category_name: Name of the category (with or without "تصنيف:" prefix)
+    
+    Returns:
+        bool: True if category is a stub or maintenance category, False otherwise
+    """
+    # Remove prefix if present
+    if ':' in category_name:
+        category_name = category_name.split(':', 1)[1]
+    
+    # Check if category name starts with "بذرة" (stub)
+    if category_name.startswith('بذرة'):
+        return True
+    
+    # Check for stub-related terms (بذور = stubs)
+    stub_terms = ['بذور', 'بذرة']
+    for term in stub_terms:
+        if term in category_name:
+            return True
+    
+    # Check for maintenance-related terms (صيانة = maintenance)
+    if 'صيانة' in category_name:
+        return True
+    
+    return False
+
+
+def is_en_stub_or_maintenance_category(category_name):
+    """
+    Check if an English category is a stub or maintenance category.
+    
+    Stub categories typically contain "stub" in the name.
+    Maintenance categories contain "maintenance" in the name.
+    
+    Args:
+        category_name: Name of the category (with or without "Category:" prefix)
+    
+    Returns:
+        bool: True if category is a stub or maintenance category, False otherwise
+    """
+    # Remove prefix if present
+    if ':' in category_name:
+        category_name = category_name.split(':', 1)[1]
+    
+    # Convert to lowercase for case-insensitive matching
+    category_name_lower = category_name.lower()
+    
+    # Check for stub-related terms
+    if 'stub' in category_name_lower:
+        return True
+    
+    # Check for maintenance-related terms
+    if 'maintenance' in category_name_lower:
+        return True
+    
+    return False
+
+
+def should_skip_ar_category(category_page):
+    """
+    Check if an Arabic category should be skipped.
+    
+    Categories to skip:
+    - Hidden categories
+    - Maintenance categories
+    - Stub categories
+    - Categories starting with "بذرة"
+    
+    Args:
+        category_page: mwclient.Page object of the Arabic category
+    
+    Returns:
+        bool: True if category should be skipped, False otherwise
+    """
+    # Check if hidden
+    if is_hidden_category(category_page):
+        print(f"  Skipping hidden category: {category_page.name}")
+        return True
+    
+    # Check if stub or maintenance category
+    if is_ar_stub_or_maintenance_category(category_page.name):
+        print(f"  Skipping stub/maintenance category: {category_page.name}")
+        return True
+    
+    return False
+
+
+def should_skip_en_category(category_page):
+    """
+    Check if an English category should be skipped.
+    
+    Categories to skip:
+    - Hidden categories
+    - Maintenance categories
+    - Stub categories
+    
+    Args:
+        category_page: mwclient.Page object of the English category
+    
+    Returns:
+        bool: True if category should be skipped, False otherwise
+    """
+    # Check if hidden
+    if is_hidden_category(category_page):
+        print(f"  Skipping hidden English category: {category_page.name}")
+        return True
+    
+    # Check if stub or maintenance category
+    if is_en_stub_or_maintenance_category(category_page.name):
+        print(f"  Skipping stub/maintenance English category: {category_page.name}")
+        return True
+    
+    return False
+
+
+def en_page_has_category_in_text(page, category_name):
+    """
+    Check if an English page contains the category directly in its text.
+    
+    This ensures the category is actually in the article text and not
+    added via a template.
+    
+    Args:
+        page: mwclient.Page object
+        category_name: Name of the category (with or without "Category:" prefix)
+    
+    Returns:
+        bool: True if category is found in page text, False otherwise
+    """
+    try:
+        text = page.text()
+        
+        # Remove prefix if present for matching
+        if ':' in category_name:
+            cat_name_without_prefix = category_name.split(':', 1)[1]
+        else:
+            cat_name_without_prefix = category_name
+        
+        # Match [[Category:...]] with optional sort key
+        pattern = r'\[\[\s*Category\s*:\s*' + re.escape(cat_name_without_prefix) + r'\s*(?:\|[^\]]*?)?\]\]'
+        return bool(re.search(pattern, text, re.IGNORECASE))
+    except (mwclient.errors.APIError, AttributeError) as e:
+        print(f"Error checking category in text for {page.name}: {e}")
+        return False
+
+
 def load_credentials():
     """
     Load Wikipedia credentials from environment variables.
@@ -201,6 +387,10 @@ def process_category(ar_site, en_site, ar_category):
     # Get the page object
     ar_category_page = ar_site.pages[category_name]
     
+    # Check if Arabic category should be skipped (hidden, maintenance, stub)
+    if should_skip_ar_category(ar_category_page):
+        return
+    
     # Get English Wikipedia link
     en_category_title = get_interwiki_link(ar_category_page, 'en')
     
@@ -209,6 +399,13 @@ def process_category(ar_site, en_site, ar_category):
         return
     
     print(f"English Wikipedia category: {en_category_title}")
+    
+    # Get the English category page object to check if it should be skipped
+    en_category_page = en_site.pages[en_category_title]
+    
+    # Check if English category should be skipped (hidden, maintenance, stub)
+    if should_skip_en_category(en_category_page):
+        return
     
     # Get members of the English category
     en_members = get_category_members(en_site, en_category_title, namespace=0)
@@ -222,6 +419,12 @@ def process_category(ar_site, en_site, ar_category):
     # Process each member
     added_count = 0
     for en_member in en_members:
+        # Check if the English page contains the category directly in its text
+        # (not added via a template)
+        if not en_page_has_category_in_text(en_member, en_category_title):
+            print(f"  Skipping {en_member.name}: category not in text (possibly added via template)")
+            continue
+        
         # Get Arabic Wikipedia link
         ar_article_title = get_interwiki_link(en_member, 'ar')
         
