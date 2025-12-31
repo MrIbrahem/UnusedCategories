@@ -1,5 +1,5 @@
 
-import unittest
+import pytest
 import sys
 import os
 
@@ -203,7 +203,3 @@ class TestIsEnStubOrMaintenanceCategory(unittest.TestCase):
     def test_stub_at_beginning(self):
         """Test stub at the beginning of category name."""
         self.assertTrue(is_en_stub_or_maintenance_category('Stub categories'))
-
-
-if __name__ == '__main__':
-    unittest.main()
