@@ -31,7 +31,7 @@ def category_in_text(text, category_name):
     return bool(re.search(pattern, text, re.IGNORECASE))
 
 
-def en_page_has_category_in_text(text, category_name) -> bool:
+def en_page_has_category_in_text(text, category_target, page_title: str = "") -> bool:
     """
     Check if an English page contains the category directly in its text.
 
@@ -40,16 +40,23 @@ def en_page_has_category_in_text(text, category_name) -> bool:
 
     Args:
         text: mwclient.Page object text
-        category_name: Name of the category (with or without "Category:" prefix)
+        category_target: Name of the category (with or without "Category:" prefix)
 
     Returns:
         bool: True if category is found in page text, False otherwise
     """
+    if page_title.startswith("Category:") and "{{Title year range}}" in text:
+        # Special case: skip checking category pages with year range templates
+        # return True
+        match_pattern = r'(\d\d\d\d–\d\d\d?\d?|\d+[–-]\d+|\d+)'
+        if m := re.search(match_pattern, category_target):
+            text = re.sub(r'\{\{Title year range\}\}', m.group(1), text, re.I)
+
     # Remove prefix if present for matching
-    if ':' in category_name:
-        cat_name_without_prefix = category_name.split(':', 1)[1]
+    if ':' in category_target:
+        cat_name_without_prefix = category_target.split(':', 1)[1]
     else:
-        cat_name_without_prefix = category_name
+        cat_name_without_prefix = category_target
 
     # Match [[Category:...]] with optional sort key
     pattern = _build_category_pattern(cat_name_without_prefix, 'Category')

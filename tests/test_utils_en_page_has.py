@@ -67,3 +67,29 @@ class TestEnPageHasCategoryInText:
         text = "Article text\n[[category:history]]\nMore text"
 
         assert en_page_has_category_in_text(text, "History") is True
+
+
+def test_special_case() -> None:
+    """Test category names with special regex characters."""
+    text = (
+        "{{Portal|North America|Association football|{{FindYDCportal|{{Title year}}}}|Countries}}\n"
+        "{{Category series navigation}}\n"
+        "[[Category:{{Title year range}} in North American football| ]]\n"
+        "[[Category:{{Title year range}} in association football by country|North American]]\n"
+        "[[Category:Association football in North America by season and country]]"
+    )
+    page_title = "Category:1951–52 in North American football by country"
+    assert en_page_has_category_in_text(text, "Category:1951–52 in North American football", page_title) is True
+
+
+def test_special_case_year() -> None:
+    """Test category names with special regex characters."""
+    text = (
+        "{{Portal|North America|Association football|{{FindYDCportal|{{Title year}}}}|Countries}}\n"
+        "{{Category series navigation}}\n"
+        "[[Category:{{Title year range}} in North American football| ]]\n"
+        "[[Category:{{Title year range}} in association football by country|North American]]\n"
+        "[[Category:Association football in North America by season and country]]"
+    )
+    page_title = "Category:1951 in North American football by country"
+    assert en_page_has_category_in_text(text, "Category:1951 in North American football", page_title) is True

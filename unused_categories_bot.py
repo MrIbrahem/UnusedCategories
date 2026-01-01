@@ -96,7 +96,7 @@ def confirm_edit(page_title, old_text, new_text):
 
     # Prompt for confirmation
     logger.info("Options: [y]es / [n]o / [a]ll (approve all remaining)")
-    response = input("Confirm edit? [Y/n/a]: ").strip().lower()
+    response = input(f"Target:{page_title}, Confirm edit? [Y/n/a]: ").strip().lower()
 
     # Empty response or "y"/"yes" means proceed with this edit
     if response in ('', 'y', 'yes'):
@@ -317,7 +317,7 @@ def get_interwiki_link(page, target_lang):
     return None
 
 
-def get_category_members(site, category_title, namespace=0):
+def get_category_members(site, category_title, namespace=0) -> list:
     """
     Get members of a category.
 
@@ -434,11 +434,13 @@ def process_category(ar_site, en_site, category_name):
         # Check if the English page contains the category directly in its text
         # (not added via a template)
         en_page_title = en_member.name
+        ns = en_member.ns
 
-        text = en_member.text()
-        if not en_page_has_category_in_text(text, en_category_title):
-            logger.info(f"  Skipping {en_page_title}: category not in text (possibly added via template)")
-            continue
+        if ns != 14:
+            text = en_member.text()
+            if not en_page_has_category_in_text(text, en_category_title, en_page_title):
+                logger.info(f"  Skipping {en_page_title}: category not in text (possibly added via template)")
+                continue
 
         # Get Arabic Wikipedia link
         ar_article_title = get_interwiki_link(en_member, 'ar')
