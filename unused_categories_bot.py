@@ -300,31 +300,25 @@ def add_category_to_page(page, category_name, summary):
     Returns:
         bool: True if category was added, False otherwise
     """
-    try:
-        # Skip redirect pages
-        if is_redirect_page(page):
-            return False
-
-        text = page.text()
-
-        # Check if category already exists
-        if category_in_text(text, category_name):
-            return False
-
-        # Add category at the end of the text
-        new_text = text.rstrip() + f"\n[[تصنيف:{category_name}]]"
-
-        # Ask for confirmation if in ask mode
-        if not confirm_edit(page.name, text, new_text):
-            return False
-
-        # Save the page
-        page.save(new_text, summary=summary)
-        return True
-
-    except (mwclient.errors.APIError, mwclient.errors.EditError) as e:
-        logger.warning(f"Error adding category to {page.name}: {e}")
+    # Skip redirect pages
+    if is_redirect_page(page):
         return False
+
+    text = page.text()
+
+    # Check if category already exists
+    if category_in_text(text, category_name):
+        return False
+
+    # Add category at the end of the text
+    new_text = text.rstrip() + f"\n[[تصنيف:{category_name}]]"
+
+    # Ask for confirmation if in ask mode
+    if not confirm_edit(page.name, text, new_text):
+        return False
+
+    # Save the page
+    return page.save(new_text, summary=summary)
 
 
 def process_category(ar_site, en_site, category_name):
@@ -414,7 +408,7 @@ def process_category(ar_site, en_site, category_name):
 
         # Add category if not present
         if add_category_to_page(ar_article, category_name_without_prefix, "بوت: أضاف 1 تصنيف"):
-            logger.info(f"    ✓ Added category to {ar_title}")
+            logger.info(f"<<green>>    ✓ Added category to {ar_title}")
             added_count += 1
         else:
             logger.info(f"    - Category already exists in {ar_title}")
