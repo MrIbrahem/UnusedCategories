@@ -74,7 +74,7 @@ def sub_cats_query(site: mwclient.Site, enlink: str, namespace: str="*", lllang:
     # ---
     pages_with_ar = {k: v for k, v in pages.items() if v is not None}
     # ---
-    print(f"<<lightblue>> sub_cats_query: {pages=}, {pages_with_ar=}")
+    logger.info(f"<<lightblue>> sub_cats_query: {len(pages)=}, {len(pages_with_ar)=}")
     # ---
     return pages_with_ar
 
