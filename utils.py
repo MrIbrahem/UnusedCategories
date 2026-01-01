@@ -31,7 +31,7 @@ def category_in_text(text, category_name):
     return bool(re.search(pattern, text, re.IGNORECASE))
 
 
-def en_page_has_category_in_text(text, category_name):
+def en_page_has_category_in_text(text, category_name) -> bool:
     """
     Check if an English page contains the category directly in its text.
 

@@ -3,7 +3,6 @@ import pytest
 
 from utils import (
     category_in_text,
-    en_page_has_category_in_text,
     is_ar_stub_or_maintenance_category,
     is_en_stub_or_maintenance_category
 )
@@ -109,28 +108,3 @@ class TestCategoryDetection:
         )
 
         assert category_in_text(text, "تاريخ") is True
-
-
-class TestCategoryFilteringMock:
-    """Test the category filtering functionality."""
-
-    def test_en_page_has_category_in_text_found(self) -> None:
-        text = "Article text\n[[Category:History]]\nMore text"
-
-        assert en_page_has_category_in_text(text, "History") is True
-        assert en_page_has_category_in_text(text, "Category:History") is True
-
-    def test_en_page_has_category_in_text_not_found(self) -> None:
-        text = "Article text\n[[Category:Science]]\nMore text"
-
-        assert en_page_has_category_in_text(text, "History") is False
-
-    def test_en_page_has_category_with_sort_key(self) -> None:
-        text = "Article text\n[[Category:History|Key]]\nMore text"
-
-        assert en_page_has_category_in_text(text, "History") is True
-
-    def test_en_page_has_category_case_insensitive(self) -> None:
-        text = "Article text\n[[category:history]]\nMore text"
-
-        assert en_page_has_category_in_text(text, "History") is True

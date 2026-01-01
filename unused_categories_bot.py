@@ -12,6 +12,7 @@ This script processes unused categories on Arabic Wikipedia by:
 
 import os
 import sys
+import logging
 import mwclient
 import difflib
 from dotenv import load_dotenv
@@ -22,6 +23,9 @@ from utils import (
     is_ar_stub_or_maintenance_category,
     is_en_stub_or_maintenance_category,
 )
+
+logger = logging.getLogger(__name__)
+logger.setLevel("DEBUG")
 
 load_dotenv()
 
@@ -76,9 +80,9 @@ def confirm_edit(page_title, old_text, new_text):
         return True
 
     # Show target page
-    print(f"\n{'='*60}")
-    print(f"Target: {page_title}")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"Target: {page_title}")
+    logger.info(f"{'='*60}")
 
     # Show diff
     old_lines = old_text.splitlines(keepends=True)
@@ -87,15 +91,15 @@ def confirm_edit(page_title, old_text, new_text):
     diff_text = ''.join(diff)
 
     if diff_text:
-        print("Diff:")
-        print(diff_text)
+        logger.info("Diff:")
+        logger.info(diff_text)
     else:
-        print("No changes detected.")
+        logger.info("No changes detected.")
 
-    print(f"{'='*60}")
+    logger.info(f"{'='*60}")
 
     # Prompt for confirmation
-    print("Options: [y]es / [n]o / [a]ll (approve all remaining)")
+    logger.info("Options: [y]es / [n]o / [a]ll (approve all remaining)")
     response = input("Confirm edit? [Y/n/a]: ").strip().lower()
 
     # Empty response or "y"/"yes" means proceed with this edit
@@ -105,11 +109,11 @@ def confirm_edit(page_title, old_text, new_text):
     # "a" means approve all remaining edits
     if response == 'a':
         _auto_approve_all = True
-        print("Auto-approving all remaining edits.")
+        logger.info("Auto-approving all remaining edits.")
         return True
 
     # Any other response means skip
-    print("Edit skipped.")
+    logger.info("Edit skipped.")
     return False
 
 
@@ -140,7 +144,7 @@ def is_hidden_category(category_page):
                 if 'categoryinfo' in page_data:
                     return page_data['categoryinfo'].get('hidden', False)
     except (mwclient.errors.APIError, KeyError) as e:
-        print(f"Error checking hidden category for {category_page.name}: {e}")
+        logger.warning(f"Error checking hidden category for {category_page.name}: {e}")
 
     return False
 
@@ -163,12 +167,12 @@ def should_skip_ar_category(category_page):
     """
     # Check if hidden
     if is_hidden_category(category_page):
-        print(f"  Skipping hidden category: {category_page.name}")
+        logger.info(f"  Skipping hidden category: {category_page.name}")
         return True
 
     # Check if stub or maintenance category
     if is_ar_stub_or_maintenance_category(category_page.name):
-        print(f"  Skipping stub/maintenance category: {category_page.name}")
+        logger.info(f"  Skipping stub/maintenance category: {category_page.name}")
         return True
 
     return False
@@ -191,12 +195,12 @@ def should_skip_en_category(category_page):
     """
     # Check if hidden
     if is_hidden_category(category_page):
-        print(f"  Skipping hidden English category: {category_page.name}")
+        logger.info(f"  Skipping hidden English category: {category_page.name}")
         return True
 
     # Check if stub or maintenance category
     if is_en_stub_or_maintenance_category(category_page.name):
-        print(f"  Skipping stub/maintenance English category: {category_page.name}")
+        logger.info(f"  Skipping stub/maintenance English category: {category_page.name}")
         return True
 
     return False
@@ -218,10 +222,10 @@ def is_redirect_page(page):
     try:
         return page.redirects_to() is not None
     except mwclient.errors.APIError as e:
-        print(f"API error checking redirect status for {page.name}: {e}")
+        logger.warning(f"API error checking redirect status for {page.name}: {e}")
         return False
     except AttributeError as e:
-        print(f"Attribute error checking redirect status for {page.name}: {e}")
+        logger.warning(f"Attribute error checking redirect status for {page.name}: {e}")
         return False
 
 
@@ -260,7 +264,7 @@ def connect_to_wikipedia(site_url, username, password):
     """
     site = mwclient.Site(site_url, scheme='https')
     site.login(username, password)
-    print(f"Successfully connected to {site_url}")
+    logger.info(f"Successfully connected to {site_url}")
     return site
 
 
@@ -275,7 +279,7 @@ def get_unused_categories(site, limit=1000) -> list:
     Returns:
         list: List of unused category titles
     """
-    print(f"Fetching up to {limit} unused categories...")
+    logger.info(f"Fetching up to {limit} unused categories...")
 
     categories = []
     try:
@@ -288,9 +292,9 @@ def get_unused_categories(site, limit=1000) -> list:
             if 'results' in querypage_data:
                 categories = querypage_data['results']
     except mwclient.errors.APIError as e:
-        print(f"API error fetching unused categories: {e}")
+        logger.warning(f"API error fetching unused categories: {e}")
 
-    print(f"Found {len(categories)} unused categories")
+    logger.info(f"Found {len(categories)} unused categories")
     categories = [cat['title'] for cat in categories]
     return categories
 
@@ -312,7 +316,7 @@ def get_interwiki_link(page, target_lang):
             if lang == target_lang:
                 return title
     except (mwclient.errors.APIError, AttributeError) as e:
-        print(f"Error getting interwiki link for {page.name}: {e}")
+        logger.warning(f"Error getting interwiki link for {page.name}: {e}")
 
     return None
 
@@ -334,7 +338,7 @@ def get_category_members(site, category_title, namespace=0):
         # Use list comprehension for efficiency
         return list(category.members(namespace=namespace))
     except (mwclient.errors.APIError, KeyError) as e:
-        print(f"Error getting category members for {category_title}: {e}")
+        logger.warning(f"Error getting category members for {category_title}: {e}")
         return []
 
 
@@ -373,7 +377,7 @@ def add_category_to_page(page, category_name, summary):
         return True
 
     except (mwclient.errors.APIError, mwclient.errors.EditError) as e:
-        print(f"Error adding category to {page.name}: {e}")
+        logger.warning(f"Error adding category to {page.name}: {e}")
         return False
 
 
@@ -392,9 +396,9 @@ def process_category(ar_site, en_site, category_name):
     else:
         category_name_without_prefix = category_name
 
-    print(f"\n{'='*60}")
-    print(f"Processing: {category_name}")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"Processing: {category_name}")
+    logger.info(f"{'='*60}")
 
     # Get the page object
     ar_category_page = ar_site.pages[category_name]
@@ -407,10 +411,10 @@ def process_category(ar_site, en_site, category_name):
     en_category_title = get_interwiki_link(ar_category_page, 'en')
 
     if not en_category_title:
-        print(f"No English Wikipedia link found for {category_name}")
+        logger.info(f"No English Wikipedia link found for {category_name}")
         return
 
-    print(f"English Wikipedia category: {en_category_title}")
+    logger.info(f"English Wikipedia category: {en_category_title}")
 
     # Get the English category page object to check if it should be skipped
     en_category_page = en_site.pages[en_category_title]
@@ -423,19 +427,21 @@ def process_category(ar_site, en_site, category_name):
     en_members = get_category_members(en_site, en_category_title, namespace="0,14")
 
     if not en_members:
-        print(f"No members found in English category {en_category_title}")
+        logger.info(f"No members found in English category {en_category_title}")
         return
 
-    print(f"Found {len(en_members)} members in English category")
+    logger.info(f"Found {len(en_members)} members in English category")
 
     # Process each member
     added_count = 0
     for en_member in en_members:
         # Check if the English page contains the category directly in its text
         # (not added via a template)
+        en_page_title = en_member.name
+
         text = en_member.text()
         if not en_page_has_category_in_text(text, en_category_title):
-            print(f"  Skipping {en_member.name}: category not in text (possibly added via template)")
+            logger.info(f"  Skipping {en_page_title}: category not in text (possibly added via template)")
             continue
 
         # Get Arabic Wikipedia link
@@ -444,19 +450,19 @@ def process_category(ar_site, en_site, category_name):
         if not ar_article_title:
             continue
 
-        print(f"  Checking Arabic article: {ar_article_title}")
+        logger.info(f"  Checking Arabic article: {ar_article_title}/{en_page_title}")
 
         # Get Arabic article page
         ar_article = ar_site.pages[ar_article_title]
 
         # Add category if not present
         if add_category_to_page(ar_article, category_name_without_prefix, "بوت: أضاف 1 تصنيف"):
-            print(f"    ✓ Added category to {ar_article_title}")
+            logger.info(f"    ✓ Added category to {ar_article_title}")
             added_count += 1
         else:
-            print(f"    - Category already exists in {ar_article_title}")
+            logger.info(f"    - Category already exists in {ar_article_title}")
 
-    print(f"\nTotal categories added: {added_count}")
+    logger.info(f"\nTotal categories added: {added_count}")
 
 
 def main():
@@ -469,10 +475,10 @@ def main():
     # Check for "ask" argument to enable interactive confirmation mode
     if 'ask' in sys.argv:
         set_ask_mode(True)
-        print("Interactive confirmation mode enabled.")
+        logger.info("Interactive confirmation mode enabled.")
 
-    print("Starting Unused Categories Bot for Arabic Wikipedia")
-    print("="*60)
+    logger.info("Starting Unused Categories Bot for Arabic Wikipedia")
+    logger.info("="*60)
 
     # Load credentials
     username, password = load_credentials()
@@ -494,16 +500,16 @@ def main():
         unused_categories = get_unused_categories(ar_site, limit=1000)
 
     if not unused_categories:
-        print("No unused categories found")
+        logger.info("No unused categories found")
         return
 
     # Process each unused category
     for category in unused_categories:
         process_category(ar_site, en_site, category)
 
-    print("\n" + "="*60)
-    print("Bot execution completed")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("Bot execution completed")
+    logger.info("="*60)
 
 
 if __name__ == "__main__":
