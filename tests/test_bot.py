@@ -9,13 +9,18 @@ connecting to Wikipedia.
 import unittest
 import sys
 import os
+from unused_categories_bot import get_unused_categories
+from unused_categories_bot import load_credentials
+from unused_categories_bot import is_hidden_category
+from unused_categories_bot import is_redirect_page
+
 
 class TestGetUnusedCategories(unittest.TestCase):
     """Test the unused categories fetching functionality."""
 
     def test_get_unused_categories_returns_results(self):
         """Test that get_unused_categories parses API response correctly."""
-        from unused_categories_bot import get_unused_categories
+
         from unittest.mock import Mock
 
         # Create mock site object
@@ -46,7 +51,7 @@ class TestGetUnusedCategories(unittest.TestCase):
 
     def test_get_unused_categories_empty_results(self):
         """Test that get_unused_categories handles empty results."""
-        from unused_categories_bot import get_unused_categories
+
         from unittest.mock import Mock
 
         # Create mock site object with empty results
@@ -66,7 +71,7 @@ class TestGetUnusedCategories(unittest.TestCase):
 
     def test_get_unused_categories_missing_query(self):
         """Test that get_unused_categories handles missing query key."""
-        from unused_categories_bot import get_unused_categories
+
         from unittest.mock import Mock
 
         # Create mock site object with malformed response
@@ -83,7 +88,6 @@ class TestCredentialLoading(unittest.TestCase):
 
     def test_credentials_missing(self):
         """Test that missing credentials raise ValueError."""
-        from unused_categories_bot import load_credentials
 
         # Save current env vars
         old_username = os.environ.get('WIKI_USERNAME')
@@ -108,7 +112,6 @@ class TestCredentialLoading(unittest.TestCase):
 
     def test_credentials_present(self):
         """Test that credentials are loaded correctly."""
-        from unused_categories_bot import load_credentials
 
         # Save current env vars
         old_username = os.environ.get('WIKI_USERNAME')
@@ -142,7 +145,7 @@ class TestHiddenCategoryCheck(unittest.TestCase):
 
     def test_hidden_category_detected(self):
         """Test that hidden category is detected."""
-        from unused_categories_bot import is_hidden_category
+
         from unittest.mock import Mock
 
         mock_page = Mock()
@@ -166,7 +169,7 @@ class TestHiddenCategoryCheck(unittest.TestCase):
 
     def test_visible_category_not_flagged(self):
         """Test that visible category is not flagged as hidden."""
-        from unused_categories_bot import is_hidden_category
+
         from unittest.mock import Mock
 
         mock_page = Mock()
@@ -190,7 +193,7 @@ class TestHiddenCategoryCheck(unittest.TestCase):
 
     def test_category_without_categoryinfo(self):
         """Test that category without categoryinfo is not flagged."""
-        from unused_categories_bot import is_hidden_category
+
         from unittest.mock import Mock
 
         mock_page = Mock()
@@ -225,7 +228,6 @@ class TestRedirectPageCheck(unittest.TestCase):
 
     def test_non_redirect_page_not_flagged(self):
         """Test that non-redirect page is not flagged."""
-        from unused_categories_bot import is_redirect_page
         from unittest.mock import Mock
 
         mock_page = Mock()
@@ -236,7 +238,6 @@ class TestRedirectPageCheck(unittest.TestCase):
 
     def test_redirect_check_handles_api_error(self):
         """Test that redirect check handles API errors gracefully."""
-        from unused_categories_bot import is_redirect_page
         from unittest.mock import Mock
         import mwclient.errors
 
