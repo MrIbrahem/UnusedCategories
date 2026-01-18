@@ -137,5 +137,5 @@ def has_ar_category_redirect_template(text):
     Returns:
         bool: True if template is found, False otherwise
     """
-    pattern = r'\{\{تحويل تصنيف\|[^\}]+\}\}'
+    pattern = r'\{\{\s*تحويل تصنيف\s*\|\s*[^\}]+\}\}'
     return bool(re.search(pattern, text))
