@@ -11,8 +11,8 @@ class TestCredentialLoading:
     def test_credentials_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from unused_categories_bot import load_credentials
 
-        monkeypatch.delenv("WM_USERNAME", raising=False)
-        monkeypatch.delenv("PASSWORD", raising=False)
+        monkeypatch.delenv("WIKI_BOT_USERNAME", raising=False)
+        monkeypatch.delenv("WIKI_BOT_PASSWORD", raising=False)
 
         with pytest.raises(ValueError):
             load_credentials()
@@ -20,8 +20,8 @@ class TestCredentialLoading:
     def test_credentials_present(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from unused_categories_bot import load_credentials
 
-        monkeypatch.setenv("WM_USERNAME", "test_user")
-        monkeypatch.setenv("PASSWORD", "test_pass")
+        monkeypatch.setenv("WIKI_BOT_USERNAME", "test_user")
+        monkeypatch.setenv("WIKI_BOT_PASSWORD", "test_pass")
 
         username, password = load_credentials()
 
