@@ -27,13 +27,13 @@ pip install -r requirements.txt
 
 Set the following environment variables:
 
-- `WM_USERNAME`: Your Wikipedia bot username
-- `PASSWORD`: Your Wikipedia bot password
+- `WIKI_BOT_USERNAME`: Your Wikipedia bot username
+- `WIKI_BOT_PASSWORD`: Your Wikipedia bot password
 
 Example:
 ```bash
-export WM_USERNAME="YourBotName@YourBotPassword"
-export PASSWORD="your_bot_password_token"
+export WIKI_BOT_USERNAME="YourBotName@YourBotPassword"
+export WIKI_BOT_PASSWORD="your_bot_password_token"
 ```
 
 ## Usage
