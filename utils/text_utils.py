@@ -125,3 +125,17 @@ def is_en_stub_or_maintenance_category(category_name):
         return True
 
     return False
+
+
+def has_ar_category_redirect_template(text):
+    """
+    Check if the Arabic article text contains the category redirect template.
+
+    Args:
+        text: Article text
+
+    Returns:
+        bool: True if template is found, False otherwise
+    """
+    pattern = r'\{\{\s*تحويل تصنيف\s*\|\s*[^\}]+\}\}'
+    return bool(re.search(pattern, text))

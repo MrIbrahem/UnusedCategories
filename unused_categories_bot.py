@@ -17,8 +17,7 @@ import os
 import sys
 import mwclient
 from dotenv import load_dotenv
-
-from wiki_api import get_category_members_pages, sub_cats_query_pages, get_interwiki_link
+from wiki_api import sub_cats_query_pages, get_interwiki_link  # , get_category_members_pages
 from utils import (
     showDiff,
     logger,
@@ -26,6 +25,7 @@ from utils import (
     category_in_text,
     is_ar_stub_or_maintenance_category,
     is_en_stub_or_maintenance_category,
+    has_ar_category_redirect_template,
 )
 
 logger.set_level("INFO")
@@ -308,6 +308,9 @@ def add_category_to_page(page, category_name, summary):
         return False
 
     text = page.text()
+
+    if has_ar_category_redirect_template(text):
+        return False
 
     # Check if category already exists
     if category_in_text(text, category_name):
